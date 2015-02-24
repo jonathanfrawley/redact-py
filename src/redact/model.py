@@ -4,20 +4,25 @@ from db import get_redis_conn
 
 
 class KeyValueField(object):
-    def __init__(self, key_short, value=None):
+    def __init__(self, key_short, value, default_value=None):
         self.key_short = key_short
         self.value = value
+        self.default_value = default_value
 
 
 class BaseModel(object):
     def __init__(self, key):
         self.key = key
+        self.version = KeyValueField('_v', 0)
 
     def save_now(self):
         pass
 
     def save_on_commit(self):
         pass
+
+    def get_migrations(self):
+        return []
 
 
 def _get_value_dict(base_model, is_short, dump_value):
@@ -40,13 +45,21 @@ def model_load(base_model):
     for k, v in base_model.__dict__.iteritems():
         new_dict[k] = v
         if isinstance(v, KeyValueField):
-            new_dict[k].value = json.loads(model_dict[v.key_short])
+            if v.key_short in model_dict:
+                value = json.loads(model_dict[v.key_short])
+            else:
+                value = new_dict[k].default_value
+            new_dict[k].value = value
     base_model.__dict__ = new_dict
-    return base_model
+    for migration in base_model.get_migrations()[base_model.version.value:]:
+        migration(base_model)
+    base_model.version.value = len(base_model.get_migrations())
 
 
 def model_save(base_model):
-    get_redis_conn().hmset(base_model.key, _get_value_dict(base_model, True, True))
+    value_dict = _get_value_dict(base_model, True, True)
+    value_dict['_v'] = len(base_model.get_migrations())
+    get_redis_conn().hmset(base_model.key, value_dict)
 
 
 def model_dump(base_model):
