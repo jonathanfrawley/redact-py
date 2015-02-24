@@ -9,4 +9,4 @@ env_test:
 	. env/bin/activate && pip2 install -r requirements_test.txt
 
 test:
-	PYTHONPATH=$PYTHONPATH:src env/bin/py.test -x tests
+	PYTHONPATH=$PYTHONPATH:src env/bin/py.test -x --strict tests

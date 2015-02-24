@@ -20,20 +20,34 @@ class BaseModel(object):
         pass
 
 
-def _get_value_dict(base_model, is_short):
+def _get_value_dict(base_model, is_short, dump_value):
     value_dict = {}
     for k, v in base_model.__dict__.iteritems():
         if isinstance(v, KeyValueField):
+            key = k
             if is_short:
-                value_dict[v.key_short] = json.dumps(v.value)
+                key = v.key_short
+            if dump_value:
+                value_dict[key] = json.dumps(v.value)
             else:
-                value_dict[k] = json.dumps(v.value)
+                value_dict[key] = v.value
     return value_dict
 
 
-def hashset_save(base_model):
-    get_redis_conn().hmset(base_model.key, _get_value_dict(base_model, True))
+def model_load(base_model):
+    model_dict = get_redis_conn().hgetall(base_model.key)
+    new_dict = {}
+    for k, v in base_model.__dict__.iteritems():
+        new_dict[k] = v
+        if isinstance(v, KeyValueField):
+            new_dict[k].value = json.loads(model_dict[v.key_short])
+    base_model.__dict__ = new_dict
+    return base_model
 
 
-def json_dump(base_model):
-    return json.dumps(_get_value_dict(base_model, False))
+def model_save(base_model):
+    get_redis_conn().hmset(base_model.key, _get_value_dict(base_model, True, True))
+
+
+def model_dump(base_model):
+    return json.dumps(_get_value_dict(base_model, False, False))
