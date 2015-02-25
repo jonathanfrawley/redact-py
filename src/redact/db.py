@@ -15,12 +15,21 @@ class WriteType:
     SET = 0
     SETEX = 1
     HSET = 2
+    HMSET = 3
 
 
 class QueuedWrite:
-    def __init__(self, operation_type, args):
-        self.operation_type = operation_type
+    def __init__(self, type, args):
+        self.type = type
         self.args = args
+
+
+def in_transaction():
+    return getattr(get_thread_local(), 'in_transaction', False)
+
+
+def get_thread_local():
+    return thread_local
 
 
 class RedisConn:
@@ -35,8 +44,8 @@ class RedisConn:
 
     @property
     def redis_conn(self):
-        if getattr(thread_local, 'in_transaction', False):
-            return thread_local.transaction_pipeline
+        if in_transaction():
+            return get_thread_local().transaction_pipeline
         else:
             return self.redis_conn_obj
 
@@ -48,8 +57,8 @@ class RedisConn:
             return json.loads(obj)
 
     def watch_transaction(self, key):
-        if getattr(thread_local, 'in_transaction', False):
-            thread_local.transaction_pipeline.watch(key)
+        if in_transaction():
+            get_thread_local().transaction_pipeline.watch(key)
 
     def pipeline(self):
         return self.redis_conn.pipeline()
@@ -82,7 +91,10 @@ class RedisConn:
         return result
 
     def hmset(self, key, values):
-        self.redis_conn.hmset(key, values)
+        if in_transaction():
+            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.HMSET, (key, values))
+        else:
+            self.redis_conn.hmset(key, values)
 
     def hexists(self, key, hkey):
         self.watch_transaction(key)
@@ -96,13 +108,22 @@ class RedisConn:
         self.redis_conn.hset(key, hkey, json.dumps(value))
 
     def set(self, key, value):
-        self.redis_conn.set(key, value)
+        if in_transaction():
+            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SET, (key, value))
+        else:
+            self.redis_conn.set(key, value)
 
     def setex(self, key, value, timeout):
-        self.redis_conn.setex(key, timeout, value)
+        if in_transaction():
+            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SETEX, (key, timeout, value))
+        else:
+            self.redis_conn.setex(key, timeout, value)
 
     def save_json(self, key, obj):
-        self.redis_conn.set(key, json.dumps(obj))
+        if in_transaction():
+            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SET, (key, json.dumps(obj)))
+        else:
+            self.redis_conn.set(key, json.dumps(obj))
 
 
 # Errors
@@ -115,7 +136,7 @@ def get_new_conn(db_type):
 
 def get_redis_conn():
     try:
-        return thread_local.redis_conn
+        return get_thread_local().redis_conn
     except Exception:
-        thread_local.redis_conn = get_new_conn(DbTypes.REDIS)
-        return thread_local.redis_conn
+        get_thread_local().redis_conn = get_new_conn(DbTypes.REDIS)
+        return get_thread_local().redis_conn

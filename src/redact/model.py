@@ -1,10 +1,6 @@
 import json
-import threading
 
 from db import get_redis_conn
-
-
-thread_local = threading.local()
 
 
 class KeyValueField(object):
