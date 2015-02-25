@@ -1,6 +1,7 @@
 import json
 import redis
 import threading
+import errors
 
 
 thread_local = threading.local()
@@ -10,15 +11,34 @@ class DbTypes:
     REDIS = 0
 
 
+class WriteType:
+    SET = 0
+    SETEX = 1
+    HSET = 2
+
+
+class QueuedWrite:
+    def __init__(self, operation_type, args):
+        self.operation_type = operation_type
+        self.args = args
+
+
 class RedisConn:
     def __init__(self, host="localhost", port=6379, db_num=0):
-        self.redis_conn =  redis.Redis(host=host, port=port, db=db_num)
+        self.redis_conn_obj = redis.Redis(host=host, port=port, db=db_num)
 
     def close(self):
         self.redis_conn.close()
 
     def delete(self, key):
         self.redis_conn.delete(key)
+
+    @property
+    def redis_conn(self):
+        if getattr(thread_local, 'in_transaction', False):
+            return thread_local.transaction_pipeline
+        else:
+            return self.redis_conn_obj
 
     def load_json(self, key):
         obj = self.redis_conn.get(key)
@@ -27,22 +47,34 @@ class RedisConn:
         else:
             return json.loads(obj)
 
+    def watch_transaction(self, key):
+        if getattr(thread_local, 'in_transaction', False):
+            thread_local.transaction_pipeline.watch(key)
+
+    def pipeline(self):
+        return self.redis_conn.pipeline()
+
     def get(self, key):
+        self.watch_transaction(key)
         return self.redis_conn.get(key)
 
     def keys(self, pattern):
         return self.redis_conn.keys(pattern)
 
     def hkeys(self, key):
+        self.watch_transaction(key)
         return self.redis_conn.hkeys(key)
 
     def hgetall(self, key):
+        self.watch_transaction(key)
         return self.redis_conn.hgetall(key)
 
     def hmget(self, key, hkeys):
+        self.watch_transaction(key)
         return self.redis_conn.hmget(key, hkeys)
 
     def hmget_json(self, key, hkeys):
+        self.watch_transaction(key)
         values = self.redis_conn.hmget(key, hkeys)
         result = []
         for value in values:
@@ -53,9 +85,11 @@ class RedisConn:
         self.redis_conn.hmset(key, values)
 
     def hexists(self, key, hkey):
+        self.watch_transaction(key)
         return self.redis_conn.hexists(key, hkey)
 
     def hget_json(self, key, hkey):
+        self.watch_transaction(key)
         return json.loads(self.redis_conn.hget(key, hkey))
 
     def hset_json(self, key, hkey, value):
@@ -72,15 +106,11 @@ class RedisConn:
 
 
 # Errors
-class NoSuchDbError(Exception):
-    pass
-
-
 def get_new_conn(db_type):
     if db_type == DbTypes.REDIS:
         return RedisConn()
     else:
-        raise NoSuchDbError("Db type <{}> is not supported".format(db_type))
+        raise errors.NoSuchDbError("Db type <{}> is not supported".format(db_type))
 
 
 def get_redis_conn():
