@@ -13,7 +13,7 @@ from fixtures import TestModel
 def simple_transaction_fn():
     loaded_model = TestModel('test_model_1')
     model_load(loaded_model)
-    loaded_model.test_str_1.value = "blah blah"
+    loaded_model.test_str_1.v = "blah blah"
     model_save(loaded_model)
 
 

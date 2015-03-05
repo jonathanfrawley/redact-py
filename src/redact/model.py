@@ -9,12 +9,40 @@ class KeyValueField(object):
         self.value = value
         self.default_value = default_value
 
+    @property
+    def v(self):
+        return self.value
+
+    @v.setter
+    def v(self, value):
+        self.value = value
+
+    def __get__(self, obj, objtype):
+        return self.value
+
+    def __set__(self, obj, val):
+        self.value = val
+
 
 class RemoteKeyValueField(object):
     def __init__(self, key_short, remote_key, default_remote_key=None):
         self.key_short = key_short
         self.remote_key = remote_key
         self.default_remote_key = default_remote_key
+
+    def __get__(self, obj, objtype):
+        return self.remote_key
+
+    def __set__(self, obj, val):
+        self.remote_key = val
+
+    @property
+    def k(self):
+        return self.remote_key
+
+    @k.setter
+    def k(self, value):
+        self.remote_key = value
 
 
 class BaseModel(object):
