@@ -4,6 +4,7 @@ from redact.db import get_redis_conn
 from redact.model import BaseModel
 from redact.model import KeyValueField
 from redact.model import model_save
+from redact.model import RemoteKeyValueField
 
 
 class TestModel(BaseModel):
@@ -12,6 +13,7 @@ class TestModel(BaseModel):
         self.test_str_1 = KeyValueField('t1', test_str_value_1)
         self.test_str_2 = KeyValueField('t2', test_str_value_2)
         self.test_str_3 = KeyValueField('t3', test_str_value_3)
+        self.test_remote_key_value = RemoteKeyValueField('tr', 'trkv:{}'.format(key))
 
 
 class TestMigratedModel(BaseModel):
@@ -32,6 +34,12 @@ class TestMigratedModel(BaseModel):
         return [migration_1, migration_2]
 
 
+class TestRemoteModel(BaseModel):
+    def __init__(self, key, test_str_value_1=None):
+        super(TestRemoteModel, self).__init__(key)
+        self.test_str_1 = KeyValueField('t1', test_str_value_1)
+
+
 ### Test fixtures
 @pytest.fixture
 def model(request):
@@ -46,10 +54,12 @@ def model(request):
 @pytest.fixture
 def saved_model(request):
     model = TestModel('test_model_1', 'a', 'b', 'c')
+    remote_model = TestRemoteModel(model.test_remote_key_value.remote_key, 'd')
     model_save(model)
+    model_save(remote_model)
 
     def fin():
         get_redis_conn().delete(model.key)
+        get_redis_conn().delete(remote_model.key)
     request.addfinalizer(fin)
     return model
-

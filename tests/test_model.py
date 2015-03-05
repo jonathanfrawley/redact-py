@@ -9,6 +9,7 @@ from fixtures import model
 from fixtures import saved_model
 from fixtures import TestModel
 from fixtures import TestMigratedModel
+from fixtures import TestRemoteModel
 
 
 ### Tests
@@ -62,3 +63,11 @@ def test_model_migration(saved_model):
     assert new_loaded_model.test_extra_value_1.value == loaded_model.test_extra_value_1.value
     assert new_loaded_model.test_extra_value_2.value == loaded_model.test_extra_value_2.value
     assert new_loaded_model.version.value == 2
+
+
+def test_model_remote_key_value(saved_model):
+    loaded_model = TestModel('test_model_1')
+    model_load(loaded_model)
+    loaded_remote_model = TestRemoteModel(loaded_model.test_remote_key_value.remote_key)
+    model_load(loaded_remote_model)
+    assert loaded_remote_model.test_str_1.value == 'd'

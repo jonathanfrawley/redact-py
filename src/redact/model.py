@@ -10,6 +10,13 @@ class KeyValueField(object):
         self.default_value = default_value
 
 
+class RemoteKeyValueField(object):
+    def __init__(self, key_short, remote_key, default_remote_key=None):
+        self.key_short = key_short
+        self.remote_key = remote_key
+        self.default_remote_key = default_remote_key
+
+
 class BaseModel(object):
     def __init__(self, key):
         self.key = key
@@ -25,17 +32,28 @@ class BaseModel(object):
         return []
 
 
+def _get_key(k, v, is_short):
+    key = k
+    if is_short:
+        key = v.key_short
+    return key
+
+
 def _get_value_dict(base_model, is_short, dump_value):
     value_dict = {}
     for k, v in base_model.__dict__.iteritems():
         if isinstance(v, KeyValueField):
-            key = k
-            if is_short:
-                key = v.key_short
+            key = _get_key(k, v, is_short)
             if dump_value:
                 value_dict[key] = json.dumps(v.value)
             else:
                 value_dict[key] = v.value
+        if isinstance(v, RemoteKeyValueField):
+            key = _get_key(k, v, is_short)
+            if dump_value:
+                value_dict[key] = json.dumps(v.remote_key)
+            else:
+                value_dict[key] = v.remote_key
     return value_dict
 
 
@@ -50,6 +68,12 @@ def model_load(base_model):
             else:
                 value = new_dict[k].default_value
             new_dict[k].value = value
+        elif isinstance(v, RemoteKeyValueField):
+            if v.key_short in model_dict:
+                remote_key = json.loads(model_dict[v.key_short])
+            else:
+                remote_key = new_dict[k].default_remote_key
+            new_dict[k].remote_key = remote_key
     base_model.__dict__ = new_dict
     for migration in base_model.get_migrations()[base_model.version.value:]:
         migration(base_model)
