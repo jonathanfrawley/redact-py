@@ -19,9 +19,10 @@ class WriteType:
 
 
 class QueuedWrite:
-    def __init__(self, type, args):
-        self.type = type
+    def __init__(self, func_name, args, kwargs):
+        self.func_name = func_name
         self.args = args
+        self.kwargs = kwargs
 
 
 def in_transaction():
@@ -91,10 +92,7 @@ class RedisConn:
         return result
 
     def hmset(self, key, values):
-        if in_transaction():
-            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.HMSET, (key, values))
-        else:
-            self.redis_conn.hmset(key, values)
+        self.do_write('hmset', key, (values,))
 
     def hexists(self, key, hkey):
         self.watch_transaction(key)
@@ -105,25 +103,29 @@ class RedisConn:
         return json.loads(self.redis_conn.hget(key, hkey))
 
     def hset_json(self, key, hkey, value):
-        self.redis_conn.hset(key, hkey, json.dumps(value))
+        self.do_write('hset', key, (hkey, json.dumps(value)))
 
     def set(self, key, value):
-        if in_transaction():
-            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SET, (key, value))
-        else:
-            self.redis_conn.set(key, value)
+        self.do_write('set', key, (value,))
 
     def setex(self, key, value, timeout):
-        if in_transaction():
-            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SETEX, (key, timeout, value))
-        else:
-            self.redis_conn.setex(key, timeout, value)
+        self.do_write('setex', key, (timeout, value))
 
     def save_json(self, key, obj):
+        self.do_write('set', key, (json.dumps(obj),))
+
+    # Sorted sets
+    def zadd(self, name, *args, **kwargs):
+        self.do_write('zadd', name, *args, **kwargs)
+
+    def do_write(self, func_name, key, args, kwargs={}):
+        args = (key,) + args
         if in_transaction():
-            get_thread_local().queued_writes[key] = QueuedWrite(WriteType.SET, (key, json.dumps(obj)))
+            get_thread_local().queued_writes[key].append(QueuedWrite(func_name, args, kwargs))
         else:
-            self.redis_conn.set(key, json.dumps(obj))
+            func = getattr(self.redis_conn, func_name)
+            if func is not None:
+                func(*args, **kwargs)
 
 
 # Errors

@@ -1,3 +1,5 @@
+import collections
+
 from db import WriteType
 from db import get_thread_local
 from functools import wraps
@@ -5,23 +7,18 @@ from redis.exceptions import WatchError
 
 from db import get_redis_conn
 from errors import MaxTransactionRetriesError
-from errors import UnknownQueuedWriteTypeError
+from errors import UnkownQueuedWriteFuncError
 
 
 MAX_TRANSACTION_RETRIES = 500
 
 
 def execute_queued_write(pipe, queued_write):
-    if queued_write.type == WriteType.SET:
-        pipe.set(*queued_write.args)
-    elif queued_write.type == WriteType.SETEX:
-        pipe.setex(*queued_write.args)
-    elif queued_write.type == WriteType.HSET:
-        pipe.hset(*queued_write.args)
-    elif queued_write.type == WriteType.HMSET:
-        pipe.hmset(*queued_write.args)
+    func = getattr(pipe, queued_write.func_name)
+    if func is not None:
+        func(*queued_write.args, **queued_write.kwargs)
     else:
-        raise UnknownQueuedWriteTypeError("{} is an unknown queued write type".format(queued_write.type))
+        raise UnkownQueuedWriteFuncError("{} is an unknown queued write func".format(queued_write.func))
 
 
 def transaction(f):
@@ -31,12 +28,13 @@ def transaction(f):
             get_thread_local().transaction_pipeline = pipe
             get_thread_local().in_transaction = True
             for i in xrange(MAX_TRANSACTION_RETRIES):
-                get_thread_local().queued_writes = {}
+                get_thread_local().queued_writes = collections.defaultdict(list)
                 try:
                     ret_value = f(*args, **kwargs)
                     pipe.multi()
-                    for queued_write in get_thread_local().queued_writes.values():
-                        execute_queued_write(pipe, queued_write)
+                    for queued_write_list in get_thread_local().queued_writes.values():
+                        for queued_write in queued_write_list:
+                            execute_queued_write(pipe, queued_write)
                     pipe.execute()
                     get_thread_local().in_transaction = False
                     return ret_value

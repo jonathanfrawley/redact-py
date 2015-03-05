@@ -6,5 +6,5 @@ class MaxTransactionRetriesError(Exception):
     pass
 
 
-class UnknownQueuedWriteTypeError(Exception):
+class UnkownQueuedWriteFuncError(Exception):
     pass

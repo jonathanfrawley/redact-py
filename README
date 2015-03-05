@@ -1,0 +1,6 @@
+
+#Design decisions:
+ - Only remote values (No embedded objects)
+ - Data structures all reference remote values (Do not ever store values)
+ - Transactions require custom functions
+
