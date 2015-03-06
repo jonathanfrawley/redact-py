@@ -181,6 +181,49 @@ class RedisConn:
     def hdel(self, key, *args):
         return self.do_write('hdel', key, args)
 
+    # Set
+    def sismember(self, key, elem):
+        self.watch_transaction(key)
+        return self.redis_conn.sismember(key, elem)
+
+    def smembers(self, key):
+        self.watch_transaction(key)
+        return self.redis_conn.smembers(key)
+
+    def scard(self, key):
+        self.watch_transaction(key)
+        return self.redis_conn.scard(key)
+
+    def sadd(self, key, elem):
+        return self.do_write('sadd', key, (elem,))
+
+    def srem(self, key, elem):
+        return self.do_write('srem', key, (elem,))
+
+    def sinter(self, set_a_key, set_b_key):
+        self.watch_transaction(set_a_key)
+        self.watch_transaction(set_b_key)
+        return self.redis_conn.sinter(set_a_key, set_b_key)
+
+    def sunion(self, set_a_key, set_b_key):
+        self.watch_transaction(set_a_key)
+        self.watch_transaction(set_b_key)
+        return self.redis_conn.sunion(set_a_key, set_b_key)
+
+    def sinterstore(self, set_a_key, set_b_key):
+        return self.do_write('sinterstore', set_a_key, (set_a_key, set_b_key,))
+
+    def sunionstore(self, set_a_key, set_b_key):
+        return self.do_write('sunionstore', set_a_key, (set_a_key, set_b_key,))
+
+    def sdiff(self, set_a_key, set_b_key):
+        self.watch_transaction(set_a_key)
+        self.watch_transaction(set_b_key)
+        return self.redis_conn.sdiff(set_a_key, set_b_key)
+
+    def sdiffstore(self, set_a_key, set_b_key):
+        return self.do_write('sdiffstore', set_a_key, (set_a_key, set_b_key,))
+
 
 # Errors
 def get_new_conn(db_type):

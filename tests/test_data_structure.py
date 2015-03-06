@@ -5,6 +5,8 @@ from redact.data_structures import SortedSet
 
 from fixtures import hashset
 from fixtures import list
+from fixtures import set
+from fixtures import set_2
 from fixtures import sorted_set
 
 
@@ -98,3 +100,60 @@ def test_hashset_del(hashset):
     assert len(hashset.keys()) == 2
     with pytest.raises(KeyError):
         print("Should raise an exception: {}".format(hashset['a']))
+
+
+# Set
+def test_set_add(set, set_2):
+    set.add("test1")
+    assert len(set) == 1
+    set.add("test2")
+    assert len(set) == 2
+    set_2.add("test3")
+    set.update(set_2)
+    assert len(set) == 3
+
+
+def test_set_intersection(set, set_2):
+    set.add("test1")
+    set.add("test2")
+    set_2.add("test2")
+    set.intersection_update(set_2)
+    assert len(set) == 1
+    assert "test2" in set
+
+
+def test_set_difference(set, set_2):
+    set.add("test1")
+    set.add("test2")
+    set_2.add("test2")
+    set.difference_update(set_2)
+    assert len(set) == 1
+    assert "test1" in set
+
+
+def test_set_read(set):
+    set.add("test1")
+    set.add("test2")
+    assert len(set) == 2
+    assert "test1" in set
+    assert "test2" in set
+
+
+def test_set_del(set):
+    set.add("test1")
+    set.add("test2")
+    assert len(set) == 2
+    set.remove("test2")
+    assert len(set) == 1
+    with pytest.raises(KeyError):
+        set.remove("test2")
+    set.discard("test2")
+    assert len(set) == 1
+    set.discard("test1")
+    assert len(set) == 0
+    set.add("test1")
+    set.add("test2")
+    set.pop()
+    assert len(set) == 1
+    set.clear()
+    assert len(set) == 0

@@ -67,8 +67,66 @@ class Hashset(collections.MutableMapping):
         return get_redis_conn().hdel(self.key, *args)
 
 
-class Set(object):
-    pass
+class Set(collections.MutableSet):
+    def __init__(self, key):
+        self.key = key
+
+    def __contains__(self, elem):
+        return self.sismember(elem)
+
+    def __iter__(self):
+        return iter(self.smembers())
+
+    def __len__(self):
+        return self.scard()
+
+    def update(self, other_set):
+        return self.sunionstore(other_set.key)
+
+    def intersection_update(self, other_set):
+        return self.sinterstore(other_set.key)
+
+    def difference_update(self, other_set):
+        return self.sdiffstore(other_set.key)
+
+    def add(self, elem):
+        return self.sadd(elem)
+
+    def discard(self, elem):
+        return self.srem(elem)
+
+    def sismember(self, elem):
+        return get_redis_conn().sismember(self.key, elem)
+
+    def smembers(self):
+        return get_redis_conn().smembers(self.key)
+
+    def scard(self):
+        return get_redis_conn().scard(self.key)
+
+    def sadd(self, elem):
+        return get_redis_conn().sadd(self.key, elem)
+
+    def srem(self, elem):
+        return get_redis_conn().srem(self.key, elem)
+
+    def sunionstore(self, other_set_key):
+        return get_redis_conn().sunionstore(self.key, other_set_key)
+
+    def sinterstore(self, other_set_key):
+        return get_redis_conn().sinterstore(self.key, other_set_key)
+
+    def sunion(self, other_set_key):
+        return get_redis_conn().sunion(self.key, other_set_key)
+
+    def sinter(self, other_set_key):
+        return get_redis_conn().sinter(self.key, other_set_key)
+
+    def sdiffstore(self, other_set_key):
+        return get_redis_conn().sdiffstore(self.key, other_set_key)
+
+    def sdiff(self, other_set_key):
+        return get_redis_conn().sdiff(self.key, other_set_key)
 
 
 class SortedSet(object):
