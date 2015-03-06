@@ -114,10 +114,6 @@ class RedisConn:
     def save_json(self, key, obj):
         self.do_write('set', key, (json.dumps(obj),))
 
-    # Sorted sets
-    def zadd(self, name, *args, **kwargs):
-        self.do_write('zadd', name, *args, **kwargs)
-
     def do_write(self, func_name, key, args, kwargs={}):
         args = (key,) + args
         if in_transaction():
@@ -126,6 +122,22 @@ class RedisConn:
             func = getattr(self.redis_conn, func_name)
             if func is not None:
                 func(*args, **kwargs)
+
+    # Sorted sets
+    def zadd(self, name, *args, **kwargs):
+        self.do_write('zadd', name, args, kwargs)
+
+    def zrangebyscore(self, name, min, max):
+        self.watch_transaction(name)
+        return self.redis_conn.zrangebyscore(name, min, max)
+
+    def zremrangebyscore(self, name, min, max):
+        self.watch_transaction(name)
+        return self.redis_conn.zremrangebyscore(name, min, max)
+
+    def zcard(self, name):
+        self.watch_transaction(name)
+        return self.redis_conn.zcard(name)
 
 
 # Errors
