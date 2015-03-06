@@ -1,5 +1,7 @@
 import pytest
 
+from redact.data_structures import List
+from redact.data_structures import SortedSet
 from redact.db import get_redis_conn
 from redact.model import BaseModel
 from redact.model import KeyValueField
@@ -61,5 +63,25 @@ def saved_model(request):
     def fin():
         get_redis_conn().delete(model.key)
         get_redis_conn().delete(remote_model.key)
+    request.addfinalizer(fin)
+    return model
+
+
+@pytest.fixture
+def sorted_set(request):
+    model = SortedSet('test_sorted_set')
+
+    def fin():
+        get_redis_conn().delete('test_sorted_set')
+    request.addfinalizer(fin)
+    return model
+
+
+@pytest.fixture
+def list(request):
+    model = List('test_list')
+
+    def fin():
+        get_redis_conn().delete('test_list')
     request.addfinalizer(fin)
     return model

@@ -118,10 +118,13 @@ class RedisConn:
         args = (key,) + args
         if in_transaction():
             get_thread_local().queued_writes[key].append(QueuedWrite(func_name, args, kwargs))
+            return None
         else:
             func = getattr(self.redis_conn, func_name)
             if func is not None:
-                func(*args, **kwargs)
+                return func(*args, **kwargs)
+            else:
+                return None
 
     # Sorted sets
     def zadd(self, name, *args, **kwargs):
@@ -138,6 +141,31 @@ class RedisConn:
     def zcard(self, name):
         self.watch_transaction(name)
         return self.redis_conn.zcard(name)
+
+    # Lists
+    def llen(self, name):
+        self.watch_transaction(name)
+        return self.redis_conn.llen(name)
+
+    def lindex(self, name, idx):
+        self.watch_transaction(name)
+        return self.redis_conn.lindex(name, idx)
+
+    def lpush(self, name, *args):
+        return self.do_write('lpush', name, args)
+
+    def rpush(self, name, *args):
+        return self.do_write('rpush', name, args)
+
+    def lpop(self, name):
+        return self.do_write('lpop', name, ())
+
+    def rpop(self, name):
+        return self.do_write('rpop', name, ())
+
+    def lrange(self, name, start, end):
+        self.watch_transaction(name)
+        return self.redis_conn.lrange(name, start, end)
 
 
 # Errors
