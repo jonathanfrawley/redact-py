@@ -1,5 +1,6 @@
 import pytest
 
+from redact.data_structures import Hashset
 from redact.data_structures import List
 from redact.data_structures import SortedSet
 from redact.db import get_redis_conn
@@ -83,5 +84,15 @@ def list(request):
 
     def fin():
         get_redis_conn().delete('test_list')
+    request.addfinalizer(fin)
+    return model
+
+
+@pytest.fixture
+def hashset(request):
+    model = Hashset('test_hashset')
+
+    def fin():
+        get_redis_conn().delete('test_hashset')
     request.addfinalizer(fin)
     return model

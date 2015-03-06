@@ -1,9 +1,9 @@
-from collections import Sequence
+import collections
 
 from db import get_redis_conn
 
 
-class List(Sequence):
+class List(collections.Sequence):
     def __init__(self, key):
         self.key = key
 
@@ -31,9 +31,40 @@ class List(Sequence):
     def rpop(self):
         return get_redis_conn().rpop(self.key)
 
+    def ltrim(self, start, end):
+        return get_redis_conn().ltrim(self.key, start, end)
 
-class RHash(object):
-    pass
+
+class Hashset(collections.MutableMapping):
+    def __init__(self, key):
+        self.key = key
+
+    def __getitem__(self, slice):
+        return self.hgetall()[slice]
+
+    def __setitem__(self, key, value):
+        return self.hset(key, value)
+
+    def __delitem__(self, key):
+        return self.hdel(key)
+
+    def __iter__(self):
+        return iter(self.hgetall())
+
+    def __len__(self):
+        return self.hlen()
+
+    def hgetall(self):
+        return get_redis_conn().hgetall(self.key)
+
+    def hset(self, key, value):
+        return get_redis_conn().hset(self.key, key, value)
+
+    def hlen(self):
+        return get_redis_conn().hlen(self.key)
+
+    def hdel(self, *args):
+        return get_redis_conn().hdel(self.key, *args)
 
 
 class Set(object):

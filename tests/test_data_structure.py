@@ -1,6 +1,9 @@
+import pytest
+
 from redact.data_structures import List
 from redact.data_structures import SortedSet
 
+from fixtures import hashset
 from fixtures import list
 from fixtures import sorted_set
 
@@ -56,3 +59,42 @@ def test_list_read(list):
     left_elem = list.lpop()
     assert len(list) == 0
     assert left_elem == 'blah2'
+
+
+def test_list_del(list):
+    list.rpush('blah1', 'blah2', 'blah3')
+    assert len(list) == 3
+    list.ltrim(0, 1)
+    assert len(list) == 2
+    list.ltrim(0, 0)
+    assert len(list) == 1
+
+
+# Hashset
+def test_hashset_add(hashset):
+    hashset['a'] = 'test1'
+    hashset['b'] = 'test2'
+    hashset['c'] = 'test3'
+    assert len(hashset.keys()) == 3
+    assert sorted(hashset.keys()) == ['a', 'b', 'c']
+    assert len(hashset.values()) == 3
+    assert sorted(hashset.values()) == ['test1', 'test2', 'test3']
+
+
+def test_hashset_read(hashset):
+    hashset['a'] = 'test1'
+    hashset['b'] = 'test2'
+    hashset['c'] = 'test3'
+    assert hashset['a'] == 'test1'
+    assert hashset['b'] == 'test2'
+    assert hashset['c'] == 'test3'
+
+
+def test_hashset_del(hashset):
+    hashset['a'] = 'test1'
+    hashset['b'] = 'test2'
+    hashset['c'] = 'test3'
+    del hashset['a']
+    assert len(hashset.keys()) == 2
+    with pytest.raises(KeyError):
+        print("Should raise an exception: {}".format(hashset['a']))

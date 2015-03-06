@@ -71,48 +71,14 @@ class RedisConn:
     def keys(self, pattern):
         return self.redis_conn.keys(pattern)
 
-    def hkeys(self, key):
-        self.watch_transaction(key)
-        return self.redis_conn.hkeys(key)
-
-    def hgetall(self, key):
-        self.watch_transaction(key)
-        return self.redis_conn.hgetall(key)
-
-    def hmget(self, key, hkeys):
-        self.watch_transaction(key)
-        return self.redis_conn.hmget(key, hkeys)
-
-    def hmget_json(self, key, hkeys):
-        self.watch_transaction(key)
-        values = self.redis_conn.hmget(key, hkeys)
-        result = []
-        for value in values:
-            result.append(json.loads(value))
-        return result
-
-    def hmset(self, key, values):
-        self.do_write('hmset', key, (values,))
-
-    def hexists(self, key, hkey):
-        self.watch_transaction(key)
-        return self.redis_conn.hexists(key, hkey)
-
-    def hget_json(self, key, hkey):
-        self.watch_transaction(key)
-        return json.loads(self.redis_conn.hget(key, hkey))
-
-    def hset_json(self, key, hkey, value):
-        self.do_write('hset', key, (hkey, json.dumps(value)))
-
     def set(self, key, value):
-        self.do_write('set', key, (value,))
+        return self.do_write('set', key, (value,))
 
     def setex(self, key, value, timeout):
-        self.do_write('setex', key, (timeout, value))
+        return self.do_write('setex', key, (timeout, value))
 
     def save_json(self, key, obj):
-        self.do_write('set', key, (json.dumps(obj),))
+        return self.do_write('set', key, (json.dumps(obj),))
 
     def do_write(self, func_name, key, args, kwargs={}):
         args = (key,) + args
@@ -128,7 +94,7 @@ class RedisConn:
 
     # Sorted sets
     def zadd(self, name, *args, **kwargs):
-        self.do_write('zadd', name, args, kwargs)
+        return self.do_write('zadd', name, args, kwargs)
 
     def zrangebyscore(self, name, min, max):
         self.watch_transaction(name)
@@ -166,6 +132,54 @@ class RedisConn:
     def lrange(self, name, start, end):
         self.watch_transaction(name)
         return self.redis_conn.lrange(name, start, end)
+
+    def ltrim(self, name, start, end):
+        return self.do_write('ltrim', name, (start, end))
+
+    # Hashsets
+    def hkeys(self, key):
+        self.watch_transaction(key)
+        return self.redis_conn.hkeys(key)
+
+    def hgetall(self, key):
+        self.watch_transaction(key)
+        return self.redis_conn.hgetall(key)
+
+    def hmget(self, key, hkeys):
+        self.watch_transaction(key)
+        return self.redis_conn.hmget(key, hkeys)
+
+    def hmget_json(self, key, hkeys):
+        self.watch_transaction(key)
+        values = self.redis_conn.hmget(key, hkeys)
+        result = []
+        for value in values:
+            result.append(json.loads(value))
+        return result
+
+    def hmset(self, key, values):
+        return self.do_write('hmset', key, (values,))
+
+    def hexists(self, key, hkey):
+        self.watch_transaction(key)
+        return self.redis_conn.hexists(key, hkey)
+
+    def hget_json(self, key, hkey):
+        self.watch_transaction(key)
+        return json.loads(self.redis_conn.hget(key, hkey))
+
+    def hset(self, key, hkey, value):
+        return self.do_write('hset', key, (hkey, value))
+
+    def hset_json(self, key, hkey, value):
+        return self.do_write('hset', key, (hkey, json.dumps(value)))
+
+    def hlen(self, key):
+        self.watch_transaction(key)
+        return self.redis_conn.hlen(key)
+
+    def hdel(self, key, *args):
+        return self.do_write('hdel', key, args)
 
 
 # Errors
