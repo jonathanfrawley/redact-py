@@ -75,7 +75,7 @@ class RedisConn:
         return self.do_write('set', key, (value,))
 
     def setex(self, key, value, timeout):
-        return self.do_write('setex', key, (timeout, value))
+        return self.do_write('setex', key, (value, timeout))
 
     def save_json(self, key, obj):
         return self.do_write('set', key, (json.dumps(obj),))
