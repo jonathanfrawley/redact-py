@@ -41,7 +41,7 @@ class RedisConn:
         self.redis_conn.close()
 
     def delete(self, key):
-        self.redis_conn.delete(key)
+        self.do_write('delete', (key), ())
 
     @property
     def redis_conn(self):
