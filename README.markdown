@@ -6,6 +6,17 @@ Redact is a KISS ORM for python with transaction support.
 ##License
 MIT license, see LICENSE.
 
+##Performance
+Run tests/perf/perf.py to get results for your machine.
+
+Here are the results running on my machine (Intel(R) Core(TM) i7 CPU 920  @ 2.67GHz, Arch linux) :
+```
+10000 writes completed in 1.83789205551 seconds
+10000 reads completed in 2.32537603378 seconds
+10000 updates completed in 4.12392377853 seconds
+10000 deletes completed in 1.30714297295 seconds
+```
+
 ##Basic Usage
 ###Defining models:
 ```python
