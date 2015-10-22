@@ -88,7 +88,7 @@ print 'num_6' in prisoner_hash  # Prints "True"
 ####List
 ```python
 prisoner_list = redact.List('prisoner_list')
-prisoner_list.lpush('num_1', 'num_2')
+prisoner_list.lpush('num_1')
 prisoner_list.rpush('num_5', 'num_6')
 print prisoner_list.rpop()  # Prints "num_6"
 print prisoner_list.lpop()  # Prints "num_1"
