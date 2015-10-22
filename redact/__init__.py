@@ -11,4 +11,5 @@ from model import load_from_dict
 from model import save
 from model import get_dict
 from model import BaseModel
+from model import KeyValueField
 from transaction import transaction
