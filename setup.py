@@ -25,7 +25,7 @@ class PyTest(TestCommand):
 from setuptools import setup, find_packages
 setup(name = "redact-py",
         version = "0.1",
-	tests_require=['redis==2.10.3', 'pytest==2.8.2'],
+	tests_require=['pytest'],
 	cmdclass = {'test': PyTest},
         packages=['redact'],
         install_requires=['redis==2.10.3'])
