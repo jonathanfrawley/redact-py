@@ -7,3 +7,5 @@ install:
     - pip install .
 # command to run tests
 script: python2 setup.py test
+services:
+  - redis-server
