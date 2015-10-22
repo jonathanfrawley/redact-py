@@ -43,7 +43,7 @@ redact.save(prisoner)
 
 @redact.transaction
 def delete_number_1_and_2():
-	number_1 = Prisoner('num_1')
+    number_1 = Prisoner('num_1')
 	redact.load(number_1)
 	
 	number_2 = Prisoner('num_2')
