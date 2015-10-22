@@ -45,10 +45,8 @@ redact.save(prisoner)
 def delete_number_1_and_2():
     number_1 = Prisoner('num_1')
 	redact.load(number_1)
-	
 	number_2 = Prisoner('num_2')
 	redact.load(number_2)
-	
 	redact.delete(number_1)  # Not actually deleted until end of function
 	redact.delete(number_2)
 	
