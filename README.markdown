@@ -1,10 +1,10 @@
 #redact-py
 Redact is a KISS ORM for python with transaction support.
 
+[![Build Status](https://travis-ci.org/df3n5/redact-py.svg?branch=master)](https://travis-ci.org/df3n5/redact-py)
+
 ##License
 MIT license, see LICENSE.
-
-[![Build Status](https://travis-ci.org/df3n5/redact-py.svg?branch=master)](https://travis-ci.org/df3n5/redact-py)
 
 ##Basic Usage
 ###Defining models:
