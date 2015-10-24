@@ -1,0 +1,7 @@
+.cache
+redact_py.egg-info
+tests/__pycache__
+*.py[c|o]
+*.sw[p|o]
+.tox
+dump.rdb
